@@ -1,7 +1,9 @@
 #include <random>
 #include <span>
-#include <array>
+#include <vector>
+#include <set>
 #include <algorithm>
+#include <functional>
 #include <iostream>
 
 #include <cmath>
@@ -57,6 +59,60 @@ void print_values(std::span<T> values) {
 
     std::cout << '\n';
 }
+
+struct compare_vector {
+    static void add_total(int value, int &old_value, int &total) {
+        if (value == old_value) {
+            total += 9;
+        }
+        else {
+            if (old_value != -1) {
+                if (old_value < value) {
+                    total += std::min(value - old_value, old_value + 10 - value) - 1;
+                }
+                else {
+                    total += std::min(old_value - value, value + 10 - old_value) - 1;
+                }
+            }
+        }
+
+        old_value = value;
+    }
+
+    static int calculate(const std::vector<int> &s) {
+        int total{};
+        int old_value{-1};
+
+        for (auto value : s) {
+            add_total(value, old_value, total);
+        }
+        
+        return total;
+    }
+
+    bool operator()(const std::vector<int> &lhs, const std::vector<int> &rhs) const {
+        return calculate(lhs) < calculate(rhs);
+    }
+};
+
+using optimum_list = std::multiset<std::vector<int>, compare_vector>;
+
+optimum_list populate(std::vector<int> input) {
+    optimum_list result{};
+
+    do
+    {
+        result.insert(input);
+        for (auto i : input) {
+            std::cout << i << ' ';
+        }
+
+        std::cout << "==> " << compare_vector::calculate(input) << '\n';
+    }
+    while (std::ranges::next_permutation(input.begin(), input.end()).found);
+
+    return result;
+}
 }
 
 int main() {
@@ -67,6 +123,8 @@ int main() {
     for (auto i = 0ull; i < values_count; ++i) {
         values_list.push_back(dist(device));
     }
+
+    auto ol = populate(values_list);
 
     print_values(std::span<int>(values_list));
 
@@ -84,22 +142,7 @@ int main() {
         if (pos != end_pos) {
             std::cout << value;
 
-            if (old_value != -1) {
-                if (value == 0 && old_value > 5) {
-                    value = 10;
-                }
-
-                if (value == old_value) {
-                    total += 10;
-                }
-                else {
-                    total += ::abs(value - old_value) - 1;
-                }
-
-                std::cout << "\nTotal distance is: " << total << '\n';
-            }
-
-            old_value = value;
+            compare_vector::add_total(value, old_value, total);
 
             values_list.erase(pos);
             print_values(std::span<int>(values_list));
@@ -107,6 +150,21 @@ int main() {
     }
 
     std::cout << "\nTotal distance is: " << total << '\n';
+
+    if (!ol.empty()) {
+        auto it = std::cbegin(ol);
+        auto it_end = std::cend(ol);// ol.upper_bound(*it);
+
+        std::cout << "\nOptimal solution is one of:\n" << '\n';
+        for (; it != it_end; ++it) {
+            // Print the span
+            for (auto value : *it) {
+                std::cout << value << ' ';
+            }
+
+            std::cout << "==> " << compare_vector::calculate(*it) << '\n';
+        }
+    }
 
     return 0;
 }
