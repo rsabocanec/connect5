@@ -100,16 +100,14 @@ using optimum_list = std::multiset<std::vector<int>, compare_vector>;
 optimum_list populate(std::vector<int> input) {
     optimum_list result{};
 
-    do
-    {
+    do {
         result.insert(input);
         for (auto i : input) {
             std::cout << i << ' ';
         }
 
         std::cout << "==> " << compare_vector::calculate(input) << '\n';
-    }
-    while (std::ranges::next_permutation(input.begin(), input.end()).found);
+    } while (std::next_permutation(input.begin(), input.end()));
 
     return result;
 }
